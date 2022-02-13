@@ -1,0 +1,11 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  ; our code starts here
+     3                                  global Double
+     4                                  segment code use32 public code
+     5                                  
+     6                                     
+     7                                  Double:
+     8 00000000 8B442404                    mov eax, [esp +4] ; we put the value from the stack in eax
+     9 00000004 01C0                        add eax,eax ; we double it and then return it
+    10                                      
+    11 00000006 C20400                      ret 4

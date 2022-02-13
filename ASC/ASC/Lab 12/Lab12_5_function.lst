@@ -1,0 +1,19 @@
+     1                                  bits 32
+     2                                  
+     3                                  global _QuickMaths
+     4                                  
+     5                                  segment code public code use32
+     6                                  _QuickMaths:
+     7 00000000 55                          push ebp
+     8 00000001 89E5                        mov ebp, esp
+     9                                      
+    10 00000003 8B4508                      mov eax, [ebp + 8] ; we save a in eax
+    11 00000006 8B5D0C                      mov ebx, [ebp + 12] ; we save b in ebx
+    12 00000009 01D8                        add eax, ebx ; we add a to b (a+b)
+    13 0000000B 8B5D10                      mov ebx, [ebp + 16] ; we save c in ebx
+    14 0000000E 29D8                        sub eax, ebx ; from eax we substract c (a+b-c)
+    15                                      
+    16 00000010 89EC                        mov esp, ebp
+    17 00000012 5D                          pop ebp 
+    18                                      
+    19 00000013 C3                          ret

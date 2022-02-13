@@ -1,0 +1,163 @@
+     1                                  ; The following code will open a file called "ana.txt" from current folder,
+     2                                  ; it will read maximum 100 characters from this file,
+     3                                  ; and it will display to the console the number of chars and the text we've read.
+     4                                  
+     5                                  ; The program will use:
+     6                                  ; - the function fopen() to open/create the file
+     7                                  ; - the function fread() to read from file
+     8                                  ; - the function printf() to display a text
+     9                                  ; - the function fclose() to close the created file.
+    10                                  
+    11                                  ; Because the fopen() call uses the file access mode "r", the file will be open for
+    12                                  ; reading. The file must exist, otherwise the fopen() call will fail.
+    13                                  ; For details about the file access modes see the section "Theory".
+    14                                  
+    15                                  ; Any string used by printf() must be null-terminated ('\0').
+    16                                  
+    17                                  bits 32
+    18                                  
+    19                                  global start
+    20                                  
+    21                                  ; declare external functions needed by our program
+    22                                  extern exit, fopen, fread, fclose, printf
+    23                                  import exit msvcrt.dll
+    24                                  import fopen msvcrt.dll
+    25                                  import fread msvcrt.dll
+    26                                  import fclose msvcrt.dll
+    27                                  import printf msvcrt.dll
+    28                                  
+    29                                  extern Double
+    30                                  ; our data is declared here (the variables needed by our program)
+    31                                  segment data use32 class=data
+    32 00000000 657832302E74787400          file_name db "ex20.txt", 0   ; filename to be read
+    33 00000009 7200                        access_mode db "r", 0       ; file access mode:
+    34                                                                  ; r - opens a file for reading. The file must exist.
+    35 0000000B FFFFFFFF                    file_descriptor dd -1       ; variable to hold the file descriptor
+    36                                      len equ 100                 ; maximum number of characters to read
+    37 0000000F 00<rept>                    text times (len+1) db 0     ; string to hold the text which is read from file
+    38 00000074 25642C2000                  format db "%d, ", 0
+    39 00000079 0A                          a db 10
+    40 0000007A 00<rept>                    string times 100 db 0
+    41 000000DE 00000000                    len_string dd 0
+    42                                  
+    43                                  ; our code starts here
+    44                                  segment code use32 class=code
+    45                                      start:
+    46                                          ; call fopen() to create the file
+    47                                          ; fopen() will return a file descriptor in the EAX or 0 in case of error
+    48                                          ; eax = fopen(file_name, access_mode)
+    49 00000000 68[09000000]                    push dword access_mode     
+    50 00000005 68[00000000]                    push dword file_name
+    51 0000000A FF15[00000000]                  call [fopen]
+    52 00000010 83C408                          add esp, 4*2                ; clean-up the stack
+    53                                  
+    54 00000013 A3[0B000000]                    mov [file_descriptor], eax  ; store the file descriptor returned by fopen
+    55                                  
+    56                                          ; check if fopen() has successfully created the file (EAX != 0)
+    57 00000018 83F800                          cmp eax, 0
+    58 0000001B 0F849F000000                    je final
+    59                                  
+    60                                          ; read the text from file using fread()
+    61                                          ; after the fread() call, EAX will contain the number of chars we've read 
+    62                                          ; eax = fread(text, 1, len, file_descriptor)
+    63 00000021 FF35[0B000000]                  push dword [file_descriptor]
+    64 00000027 6A64                            push dword len
+    65 00000029 6A01                            push dword 1
+    66 0000002B 68[0F000000]                    push dword text        
+    67 00000030 FF15[00000000]                  call [fread]
+    68 00000036 83C410                          add esp, 4*4
+    69                                  
+    70 00000039 89C1                            mov ecx,eax
+    71 0000003B BE[0F000000]                    mov esi, text
+    72 00000040 BB00000000                      mov ebx,0
+    73 00000045 BA00000000                      mov edx,0
+    74 0000004A BF[7A000000]                    mov edi,string
+    75                                          
+    76                                          
+    77 0000004F FC                              cld
+    78                                          Check: ; we start going through the elements of the file one by one
+    79 00000050 83F900                              cmp ecx,0 
+    80 00000053 762F                                jbe continue
+    81 00000055 AC                                  lodsb ; we put the element in al
+    82 00000056 3C2C                                cmp al, ',' ; we check until the end of the number
+    83 00000058 7412                                je inc_esi
+    84 0000005A 2C30                                sub al,'0'
+    85 0000005C 88C3                                mov bl,al
+    86 0000005E 88D0                                mov al,dl
+    87 00000060 F625[79000000]                      mul byte [a]  ;we will try to built the number digit by digit
+    88 00000066 00D8                                add al,bl
+    89 00000068 88C2                                mov dl,al
+    90                                              
+    91                                              
+    92                                              
+    93                                              ; we will compare it with the ascii code of each of the characters a-z A-Z and 0-9
+    94                                              
+    95 0000006A E2E4                            loop Check
+    96                                          
+    97                                          inc_esi: ; we reached the end of the number
+    98 0000006C 46                                  inc esi ;we prepare for the next iteration
+    99 0000006D 88D0                                mov al,dl
+   100 0000006F AA                                  stosb ; we will put the built number in our predefined array
+   101 00000070 B200                                mov dl,0
+   102 00000072 8305[DE000000]01                    add [len_string], dword 1 ; we will use our variable len_string to keep count of the numbers of our array
+   103 00000079 83F900                              cmp ecx,0
+   104 0000007C 7702                                ja dec_ecx
+   105 0000007E EBD0                                jmp Check
+   106                                          
+   107                                          dec_ecx:; we will pass the ',' and ' ' elements from our text
+   108 00000080 49                                  dec ecx
+   109 00000081 49                                  dec ecx 
+   110 00000082 EBCC                                jmp Check
+   111                                          
+   112                                          continue:
+   113 00000084 B900000000                          mov ecx,0
+   114 00000089 8B0D[DE000000]                      mov ecx,[len_string]
+   115 0000008F BE[7A000000]                        mov esi,string ; we save the beginning of our string
+   116 00000094 8D7C0EFF                            lea edi,[esi+ecx-1] ; we save the ending value of our array
+   117 00000098 EB00                                jmp continue2
+   118                                          
+   119                                          continue2:
+   120 0000009A 8A06                                mov al, [esi]
+   121 0000009C 8A1F                                mov bl, [edi]
+   122 0000009E 8807                                mov [edi],al
+   123 000000A0 881E                                mov [esi],bl  ; we will interchange the elements in our array
+   124 000000A2 46                                  inc esi
+   125 000000A3 4F                                  dec edi
+   126 000000A4 39FE                                cmp esi,edi ; we check if we interchanged all elements
+   127 000000A6 72F2                                jb continue2 
+   128                                          
+   129 000000A8 BE[7A000000]                    mov esi,string
+   130 000000AD 8D7C0EFF                        lea edi,[esi+ecx-1] 
+   131                                          continue3: ; we will go through every element again
+   132 000000B1 8A06                                mov al,[esi] ; we put the element in al
+   133 000000B3 50                                  push eax
+   134 000000B4 E8(00000000)                        call Double ; we will double the element through our function
+   135 000000B9 8806                                mov [esi],al ; we put it in it's place
+   136 000000BB 46                                  inc esi
+   137 000000BC 39FE                                cmp esi,edi ; we check if we did the same for every element
+   138 000000BE 76F1                                jbe continue3
+   139                                          
+   140                                          
+   141                                       final:
+   142 000000C0 FF35[0B000000]                  push dword [file_descriptor]
+   143 000000C6 FF15[00000000]                  call [fclose]
+   144 000000CC 83C404                          add esp, 4
+   145                                          
+   146 000000CF BE[7A000000]                    mov esi,string
+   147 000000D4 BB01000000                      mov ebx,1
+   148                                          afisare: ; we print each element to the console
+   149 000000D9 8A06                                mov al,[esi]
+   150 000000DB 6698                                cbw
+   151 000000DD 98                                  cwde
+   152 000000DE 46                                  inc esi
+   153 000000DF 43                                  inc ebx
+   154                                          
+   155 000000E0 50                                  push dword eax
+   156 000000E1 68[74000000]                        push dword format
+   157 000000E6 FF15[00000000]                      call [printf]
+   158 000000EC 83C408                              add esp, 4*2
+   159 000000EF 3B1D[DE000000]                      cmp ebx,[len_string]
+   160 000000F5 76E2                                jbe afisare
+   161                                          ; exit(0)
+   162 000000F7 6A00                            push dword 0
+   163 000000F9 FF15[00000000]                  call [exit]

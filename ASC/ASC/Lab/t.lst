@@ -1,0 +1,176 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit, printf               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll
+     9                                  import printf msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+    10                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    11                                  
+    12                                  ; our data is declared here (the variables needed by our program)
+    13                                  segment data use32 class=data
+    14                                      ; ...
+    15                                      
+    16 00000000 686578202020202020-         reg_hex DB 'hex      EAX: %10x, EDX: %10x, ECX: %10x, EBX: %10x, ESP: %10x, EBP: %10x, ESI: %10x, EDI: %10x', 10,  0
+    16 00000009 4541583A2025313078-
+    16 00000012 2C204544583A202531-
+    16 0000001B 30782C204543583A20-
+    16 00000024 253130782C20454258-
+    16 0000002D 3A20253130782C2045-
+    16 00000036 53503A20253130782C-
+    16 0000003F 204542503A20253130-
+    16 00000048 782C204553493A2025-
+    16 00000051 3130782C204544493A-
+    16 0000005A 20253130780A00     
+    17 00000061 756E73696E67656420-         reg_unsgined DB 'unsinged EAX: %10u, EDX: %10x, ECX: %10u, EBX: %10u, ESP: %10u, EBP: %10u, ESI: %10u, EDI: %10u', 10,  0
+    17 0000006A 4541583A2025313075-
+    17 00000073 2C204544583A202531-
+    17 0000007C 30782C204543583A20-
+    17 00000085 253130752C20454258-
+    17 0000008E 3A20253130752C2045-
+    17 00000097 53503A20253130752C-
+    17 000000A0 204542503A20253130-
+    17 000000A9 752C204553493A2025-
+    17 000000B2 3130752C204544493A-
+    17 000000BB 20253130750A00     
+    18 000000C2 7369676E6564202020-         reg1_signed dB 'signed   EAX: %10d, EDX: %10d, ECX: %10d, EBX: %10d, ', 0
+    18 000000CB 4541583A2025313064-
+    18 000000D4 2C204544583A202531-
+    18 000000DD 30642C204543583A20-
+    18 000000E6 253130642C20454258-
+    18 000000EF 3A20253130642C2000 
+    19 000000F8 4553503A2025313064-         reg2_signed dB 'ESP: %10d, EBP: %10d, ESI: %10d, EDI: %10d', 10, 0
+    19 00000101 2C204542503A202531-
+    19 0000010A 30642C204553493A20-
+    19 00000113 253130642C20454449-
+    19 0000011C 3A20253130640A00   
+    20                                      
+    21 00000124 2000                        space DB " ", 0
+    22 00000126 0A00                        new_line DB 10, 0
+    23                                  
+    24                                  ; our code starts here
+    25                                  segment code use32 class=code
+    26                                      start:
+    27                                          ; write code here:
+    28                                          
+    29                                          ; example
+    30 00000000 E813000000                      CALL print_regs
+    31 00000005 B00F                            mov al, 250 >>4
+    32 00000007 E80C000000                      CALL print_regs
+    33 0000000C B0FF                            mov al,0FFFFh>>4
+    33          ******************       warning: byte data exceeds bounds [-w+number-overflow]
+    34 0000000E E805000000                      CALL print_regs
+    35                                           
+    36                                          
+    37                                          
+    38 00000013 E9A8000000                      jmp end_of_FUNCTIONS
+    39                                          ; DO NOT WRITE CODE HERE CUZ IT WILL BE SKIPPED
+    40                                          FUNCTIONS:
+    41                                          
+    42                                              print_regs;
+    42          ******************       warning: label alone on a line without a colon might be in error [-w+orphan-labels]
+    43 00000018 60                                      PUSHAD
+    44                                                  
+    45 00000019 E891000000                              CALL print_new_line
+    46 0000001E E816000000                              CALL print_reg_hex
+    47 00000023 E82E000000                              CALL print_reg_unsigned
+    48 00000028 E846000000                              CALL print_reg_dec
+    49 0000002D E87D000000                              CALL print_new_line
+    50 00000032 E878000000                              CALL print_new_line
+    51                                                  
+    52 00000037 61                                      POPAD
+    53 00000038 C3                                      RET
+    54                                              print_reg_hex:
+    55 00000039 55                                      PUSH EBP
+    56 0000003A 89E5                                    MOV EBP, ESP
+    57 0000003C 60                                      PUSHAD
+    58                                                  
+    59 0000003D 57                                      PUSH EDI
+    60 0000003E 56                                      PUSH ESI
+    61 0000003F 55                                      PUSH EBP
+    62 00000040 54                                      PUSH ESP
+    63                                  
+    64 00000041 53                                      PUSH EBX
+    65 00000042 51                                      PUSH ECX
+    66 00000043 52                                      PUSH EDX
+    67 00000044 50                                      PUSH EAX
+    68 00000045 68[00000000]                            PUSH DWORD reg_hex
+    69 0000004A FF15[00000000]                          call [printf]
+    70 00000050 83C424                                  ADD ESP, 4*9
+    71                                                  
+    72 00000053 61                                      POPAD
+    73 00000054 5D                                      POP EBP
+    74 00000055 C3                                      RET
+    75                                              print_reg_unsigned:
+    76 00000056 55                                      PUSH EBP
+    77 00000057 89E5                                    MOV EBP, ESP
+    78 00000059 60                                      PUSHAD
+    79                                                  
+    80 0000005A 57                                      PUSH EDI
+    81 0000005B 56                                      PUSH ESI
+    82 0000005C 55                                      PUSH EBP
+    83 0000005D 54                                      PUSH ESP
+    84                                  
+    85 0000005E 53                                      PUSH EBX
+    86 0000005F 51                                      PUSH ECX
+    87 00000060 52                                      PUSH EDX
+    88 00000061 50                                      PUSH EAX
+    89 00000062 68[61000000]                            PUSH DWORD reg_unsgined
+    90 00000067 FF15[00000000]                          call [printf]
+    91 0000006D 83C424                                  ADD ESP, 4*9
+    92                                                  
+    93 00000070 61                                      POPAD
+    94 00000071 5D                                      POP EBP
+    95 00000072 C3                                      RET
+    96                                              print_reg_dec:
+    97 00000073 55                                      PUSH EBP
+    98 00000074 89E5                                    MOV EBP, ESP
+    99 00000076 60                                      PUSHAD
+   100                                                  
+   101 00000077 53                                      PUSH EBX
+   102 00000078 51                                      PUSH ECX
+   103 00000079 52                                      PUSH EDX
+   104 0000007A 50                                      PUSH EAX
+   105 0000007B 68[C2000000]                            PUSH DWORD reg1_signed
+   106 00000080 FF15[00000000]                          call [printf]
+   107 00000086 83C414                                  ADD ESP, 4*5
+   108                                                  
+   109 00000089 57                                      PUSH EDI
+   110 0000008A 56                                      PUSH ESI
+   111 0000008B 55                                      PUSH EBP
+   112 0000008C 54                                      PUSH ESP
+   113 0000008D 68[F8000000]                            PUSH DWORD reg2_signed
+   114 00000092 FF15[00000000]                          call [printf]
+   115 00000098 83C414                                  ADD ESP, 4*5
+   116                                                  
+   117 0000009B 61                                      POPAD
+   118 0000009C 5D                                      POP EBP
+   119 0000009D C3                                      RET
+   120                                              
+   121                                              print_space:
+   122 0000009E 60                                      PUSHAD
+   123                                                  
+   124 0000009F 68[24010000]                            PUSH DWORD space
+   125 000000A4 FF15[00000000]                          CALL [printf]
+   126 000000AA 83C404                                  ADD ESP, 1*4
+   127                                                  
+   128 000000AD 61                                      POPAD
+   129 000000AE C3                                      RET
+   130                                              print_new_line:
+   131 000000AF 60                                      PUSHAD
+   132                                                  
+   133 000000B0 68[26010000]                            PUSH DWORD new_line
+   134 000000B5 FF15[00000000]                          CALL [printf]
+   135 000000BB 83C404                                  ADD ESP, 1*4
+   136                                                  
+   137 000000BE 61                                      POPAD
+   138 000000BF C3                                      RET 
+   139                                              
+   140                                          end_of_FUNCTIONS:
+   141                                          
+   142                                          ; exit(0)
+   143 000000C0 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+   144 000000C2 FF15[00000000]                  call    [exit]       ; call exit to terminate the program
+   145                                  

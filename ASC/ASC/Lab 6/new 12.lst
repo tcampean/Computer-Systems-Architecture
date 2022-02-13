@@ -1,0 +1,62 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; ...
+    14                                      
+    15 00000000 072137132E                  s1 db 7, 33, 55, 19, 46
+    16                                      l_s1 equ $-s1
+    17 00000005 2115070D1B1337012E          s2 db 33, 21, 7, 13, 27, 19, 55, 1, 46
+    18                                      l_s2 equ $-s2
+    19 0000000E 00<rept>                    d times l_s2 db 0
+    20                                      
+    21                                  ; our code starts here
+    22                                  segment code use32 class=code
+    23                                      start:
+    24                                          ; ...
+    25 00000000 BB00000000                      mov ebx, 0
+    26 00000005 BE[05000000]                    mov esi, s2
+    27 0000000A BF[00000000]                    mov edi, s1
+    28 0000000F BA00000000                      mov edx,0
+    29 00000014 FC                              cld
+    30                                     
+    31                                          outer_Loop:
+    32 00000015 83FA09                             cmp edx,l_s2 ; if we reach the end of the string then we exit the application
+    33 00000018 7427                               je End
+    34 0000001A B300                               mov bl, 0 ; we will use bl to track the indexes of the elements
+    35 0000001C BF[00000000]                       mov edi,s1 ; we put s1 in edi
+    36 00000021 AC                                 lodsb
+    37                                          inner_Loop:
+    38 00000022 80C301                              add bl,1 
+    39 00000025 AE                                  scasb ; we compare the values
+    40 00000026 7405                                je Adding ; ; if they are equal then we found the element and we are going to adds it's position to d string
+    41 00000028 EBF8                                jmp inner_Loop
+    42                                          
+    43                                          reset_inner:
+    44 0000002A 42                                  inc edx ; we move to the next element in s2
+    45                                          
+    46 0000002B EBE8                                jmp outer_Loop
+    47                                          Adding:
+    48 0000002D 80FB05                              cmp bl,l_s1 ; if the index is bigger than the lenght of the string then the element does not exist
+    49 00000030 7603                                jbe Added ; if it's in range then we are going to add it's index to our string
+    50 00000032 42                                  inc edx
+    51 00000033 EBE0                                jmp outer_Loop
+    52                                          Added:
+    53 00000035 889A[0E000000]                      mov [d+edx], bl ; we put the index in it's respective position
+    54 0000003B B300                                mov bl,0 ; we reset the positioj
+    55 0000003D 42                                  inc edx
+    56 0000003E 41                                  inc ecx
+    57 0000003F EBD4                                jmp outer_Loop ; we move onto the next element
+    58                                          End:
+    59                                      
+    60                                          ; exit(0)
+    61 00000041 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    62 00000043 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

@@ -1,0 +1,36 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit,printf            ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll
+     9                                  import printf msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+    10                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    11                                  
+    12                                  ; our data is declared here (the variables needed by our program)
+    13                                  segment data use32 class=data
+    14                                      ; ...
+    15 00000000 0A000000                    a dd 10
+    16 00000004 07000000                    b dd 7
+    17 00000008 51756F7469656E743D-         format db "Quotient= %d , Remainder = %d",0
+    17 00000011 202564202C2052656D-
+    17 0000001A 61696E646572203D20-
+    17 00000023 256400             
+    18                                  ; our code starts here
+    19                                  segment code use32 class=code
+    20                                      start:
+    21                                          ; ...
+    22 00000000 A1[00000000]                    mov eax,[a]
+    23 00000005 99                              cdq ; we convert the value of eax into a quadword
+    24 00000006 F735[04000000]                  div DWORD [b] ; we div the value in edx:eax
+    25 0000000C 52                              push dword edx
+    26 0000000D 50                              push dword eax
+    27 0000000E 68[08000000]                    push dword format ;we take the results and we format them
+    28 00000013 FF15[00000000]                  call [printf]       ; we print the corresponding message 
+    29 00000019 83C40C                          add esp, 4 * 3    
+    30                                         
+    31                                         ; exit(0)
+    32 0000001C 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    33 0000001E FF15[00000000]                  call    [exit]       ; call exit to terminate the program

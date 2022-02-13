@@ -1,0 +1,62 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; ...
+    14                                      
+    15 00000000 072137132E                  s1 db 7, 33, 55, 19, 46
+    16                                      l_s1 equ $-s1
+    17 00000005 2115070D1B1337012E          s2 db 33, 21, 7, 13, 27, 19, 55, 1, 46
+    18                                      l_s2 equ $-s2
+    19 0000000E 00<rept>                    d times l_s2 db 0
+    20                                      
+    21                                  ; our code starts here
+    22                                  segment code use32 class=code
+    23                                      start:
+    24                                          ; ...
+    25 00000000 BB00000000                      mov ebx, 0
+    26 00000005 B900000000                      mov ecx,0
+    27 0000000A BE[05000000]                    mov esi, s2
+    28 0000000F BF[00000000]                    mov edi, s1
+    29 00000014 BA00000000                      mov edx,0
+    30 00000019 FC                              cld
+    31                                     
+    32                                          outer_Loop:
+    33                                               ;mov al, [b+esi]
+    34                                               ;inc esi
+    35                                              
+    36 0000001A 83F909                             cmp ecx, l_s2
+    37 0000001D 7419                               je End
+    38 0000001F AC                                 lodsb
+    39 00000020 BBFFFFFFFF                         mov ebx,-1
+    40                                          inner_Loop:
+    41                                               
+    42 00000025 AE                                  scasb
+    43 00000026 7406                                je Adding
+    44 00000028 E2FB                            Loop inner_Loop
+    45                                          
+    46                                          reset_inner:
+    47 0000002A 41                                  inc ecx
+    48 0000002B 42                                  inc edx
+    49                                          
+    50 0000002C EBEC                                jmp outer_Loop
+    51                                          Adding:
+    52 0000002E 89BA[0E000000]                      mov [d+edx], BYTE edi
+    52          ******************       warning: register size specification ignored
+    53 00000034 41                                  inc ecx
+    54 00000035 42                                  inc edx
+    55 00000036 EBE2                                jmp outer_Loop
+    56                                              
+    57                                          End:
+    58                                      
+    59                                          ; exit(0)
+    60 00000038 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    61 0000003A FF15[00000000]                  call    [exit]       ; call exit to terminate the program

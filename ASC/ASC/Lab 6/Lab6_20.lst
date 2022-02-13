@@ -1,0 +1,86 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; ...
+    14 00000000 6361706163206C6361-         s1 db 'capac lcadea aero cecec'
+    14 00000009 646561206165726F20-
+    14 00000012 6365636563         
+    15                                      l_s1 equ $-s1
+    16 00000017 20                          d db ' '
+    17 00000018 00<rept>                    pali times l_s1/2 db 0
+    18 00000023 00000000                    pasebx dd 0
+    19 00000027 00000000                    pasecx dd 0
+    20 0000002B 00000000                    pas dd 0
+    21                                      
+    22                                  
+    23                                  ; our code starts here
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                          ; ...
+    27 00000000 BB00000000                      mov ebx,0
+    28 00000005 BA00000000                      mov edx,0
+    29 0000000A B900000000                      mov ecx,0
+    30 0000000F BE[00000000]                    mov esi, s1
+    31 00000014 FC                              cld
+    32                                          
+    33                                          yes:
+    34                                              
+    35 00000015 8B1D[23000000]                      mov ebx,[pasebx]
+    36 0000001B 8B0D[23000000]                      mov ecx,[pasebx]   ; we pass the last position to ebx and ecx
+    37 00000021 83F917                              cmp ecx,l_s1
+    38 00000024 736F                                jae End
+    39 00000026 8A040E                              mov al,byte [esi + ecx] ; we put in al the first letter of the word
+    40 00000029 EB00                                jmp verify
+    41                                              
+    42                                          verify:
+    43 0000002B 80BB[00000000]20                    cmp [s1+ebx], byte ' ' ; we go trough the word up to the end of it when we find a space
+    44 00000032 7410                                je plus ; if we find it then we are going to jump further
+    45 00000034 43                                  inc ebx
+    46 00000035 891D[23000000]                      mov [pasebx],ebx
+    47 0000003B 8305[23000000]01                    add [pasebx],DWORD 1
+    48 00000042 EBE7                                jmp verify
+    49                                              
+    50                                          plus:
+    51 00000044 4B                                  dec ebx
+    52 00000045 8A141E                              mov dl, byte [esi + ebx] ; we put in dl the last letter of the word
+    53 00000048 890D[27000000]                      mov [pasecx],ecx
+    54 0000004E 832D[27000000]01                    sub [pasecx], DWORD 1
+    55 00000055 EB00                                jmp verif
+    56                                          verif:
+    57 00000057 38D0                                cmp al,dl ; we are going to compare each letter with it's "twin part" in the word
+    58 00000059 7524                                jne NotPali ; if they are different it means that the word is not a palindrom so we just skip checking it any further
+    59 0000005B 41                                  inc ecx
+    60 0000005C 4B                                  dec ebx
+    61 0000005D 8A040E                              mov al, byte[esi+ecx]
+    62 00000060 8A140E                              mov dl, byte[esi+ecx]
+    63                                              
+    64                                    
+    65 00000063 39CB                                cmp ebx,ecx ; we check if we passed the middle of the word
+    66 00000065 7202                                jb Pali
+    67 00000067 EBEE                                jmp verif
+    68                                         Pali:
+    69 00000069 8B1D[2B000000]                      mov ebx,[pas]
+    70 0000006F C683[18000000]01                    mov [pali+ebx], byte 1 ; if it's a palindrom we are going to put in it's respective index in the string pali the value 1
+    71 00000076 8305[2B000000]01                    add [pas], DWORD 1
+    72 0000007D EB96                                jmp yes
+    73                                         NotPali:
+    74 0000007F 8B1D[2B000000]                      mov ebx,[pas]
+    75 00000085 C683[18000000]00                    mov [pali+ebx], byte 0 ; if it's not palindrom then we are going to put 0 in the word's position
+    76 0000008C 8305[2B000000]01                    add [pas], DWORD 1
+    77 00000093 EB80                                jmp yes
+    78                                          
+    79                                              
+    80                                         
+    81                                          End:
+    82                                          ; exit(0)
+    83 00000095 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    84 00000097 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

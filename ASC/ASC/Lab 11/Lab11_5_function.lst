@@ -1,0 +1,14 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  ; our code starts here
+     3                                  global QuickMaths
+     4                                  segment code use32 public code
+     5                                  
+     6                                     
+     7                                  QuickMaths:
+     8 00000000 8B442404                    mov eax, [esp +4] ; we put a in eax
+     9 00000004 8B5C2408                    mov ebx,[esp +8] ; we put b in ebx
+    10 00000008 8B4C240C                    mov ecx,[esp+12] ; we put c in ecx
+    11 0000000C 01D8                        add eax,ebx
+    12 0000000E 29C8                        sub eax,ecx ; we will have eax = a + b - c
+    13                                      
+    14 00000010 C20400                      ret 4 ; we return the value

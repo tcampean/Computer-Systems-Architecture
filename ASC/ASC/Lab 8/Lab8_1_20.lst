@@ -1,0 +1,80 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit, printf, scanf          ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                  import printf msvcrt.dll
+    10                                  import scanf msvcrt.dll
+    11                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    12                                  
+    13                                  ; our data is declared here (the variables needed by our program)
+    14                                  segment data use32 class=data
+    15                                      ; ...
+    16 00000000 00000000                    a dd 0
+    17 00000004 00000000                    b dd 0
+    18 00000008 613D00                      message1 db "a=", 0
+    19 0000000B 623D00                      message2 db "b=", 0
+    20 0000000E 257800                      format db "%x", 0
+    21 00000011 73756D3D20257800            afisaresum db "sum= %x",0
+    22 00000019 646966666572656E63-         afisaredif db "difference = %x",0
+    22 00000022 65203D20257800     
+    23                                  
+    24                                  ; our code starts here
+    25                                  segment code use32 class=code
+    26                                      start:
+    27                                          ; ...
+    28 00000000 68[08000000]                    push dword message1
+    29 00000005 FF15[00000000]                  call [printf]      ; we will print 'a='
+    30 0000000B 83C404                          add esp, 4*1
+    31                                          
+    32 0000000E 68[00000000]                    push dword a      
+    33 00000013 68[0E000000]                    push dword format
+    34 00000018 FF15[00000000]                  call [scanf]        ; we will take the value of a
+    35 0000001E 83C408                          add esp, 4 * 2 
+    36                                          
+    37 00000021 68[0B000000]                    push dword message2
+    38 00000026 FF15[00000000]                  call [printf]      ; we print 'b='
+    39 0000002C 83C404                          add esp, 4*1
+    40                                          
+    41 0000002F 68[04000000]                    push dword b    
+    42 00000034 68[0E000000]                    push dword format ; we take the value of b
+    43 00000039 FF15[00000000]                  call [scanf]   
+    44 0000003F 83C408                          add esp, 4 * 2 
+    45                                          
+    46 00000042 A1[00000000]                    mov eax,[a] ; we put a in eax
+    47 00000047 8B1D[04000000]                  mov ebx,[b] ; we put b in ebx
+    48                                          
+    49 0000004D A1[00000000]                    mov eax,[a]
+    50 00000052 C1E810                          shr eax, 16 ; we take the high part of eax
+    51                                          
+    52 00000055 8B1D[04000000]                  mov ebx,[b]
+    53 0000005B C1EB10                          shr ebx,16 ; we get the high part of ebx
+    54 0000005E 29D8                            sub eax,ebx ; we compute the difference
+    55                                          
+    56 00000060 50                              push dword eax
+    57 00000061 68[19000000]                    push dword afisaredif 
+    58 00000066 FF15[00000000]                  call [printf] ; we show the message with the result
+    59 0000006C 83C408                          add esp, 4 * 2 
+    60                                          
+    61 0000006F A1[00000000]                    mov eax,[a]
+    62 00000074 8B1D[04000000]                  mov ebx, [b]
+    63 0000007A 6601D8                          add ax,bx ; we add the lower parts of ebx and eax
+    64 0000007D 66BA0000                        mov dx,0
+    65 00000081 6652                            push dx
+    66 00000083 6650                            push ax
+    67 00000085 58                              pop eax
+    68                                          
+    69 00000086 50                              push dword eax
+    70 00000087 68[11000000]                    push dword afisaresum ; we show the message with the result
+    71 0000008C FF15[00000000]                  call [printf]
+    72 00000092 83C408                          add esp,4*2
+    73                                          
+    74                                          
+    75                                          
+    76                                      
+    77                                          ; exit(0)
+    78 00000095 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    79 00000097 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

@@ -1,0 +1,130 @@
+     1                                  ; The following code will open a file called "ana.txt" from current folder,
+     2                                  ; it will read maximum 100 characters from this file,
+     3                                  ; and it will display to the console the number of chars and the text we've read.
+     4                                  
+     5                                  ; The program will use:
+     6                                  ; - the function fopen() to open/create the file
+     7                                  ; - the function fread() to read from file
+     8                                  ; - the function printf() to display a text
+     9                                  ; - the function fclose() to close the created file.
+    10                                  
+    11                                  ; Because the fopen() call uses the file access mode "r", the file will be open for
+    12                                  ; reading. The file must exist, otherwise the fopen() call will fail.
+    13                                  ; For details about the file access modes see the section "Theory".
+    14                                  
+    15                                  ; Any string used by printf() must be null-terminated ('\0').
+    16                                  
+    17                                  bits 32
+    18                                  
+    19                                  global start
+    20                                  
+    21                                  ; declare external functions needed by our program
+    22                                  extern exit, fopen, fread, fclose, printf
+    23                                  import exit msvcrt.dll
+    24                                  import fopen msvcrt.dll
+    25                                  import fread msvcrt.dll
+    26                                  import fclose msvcrt.dll
+    27                                  import printf msvcrt.dll
+    28                                  
+    29                                  ; our data is declared here (the variables needed by our program)
+    30                                  segment data use32 class=data
+    31 00000000 6578352E74787400            file_name db "ex5.txt", 0   ; filename to be read
+    32 00000008 7200                        access_mode db "r", 0       ; file access mode:
+    33                                                                  ; r - opens a file for reading. The file must exist.
+    34 0000000A FFFFFFFF                    file_descriptor dd -1       ; variable to hold the file descriptor
+    35                                      len equ 100                 ; maximum number of characters to read
+    36 0000000E 00<rept>                    text times (len+1) db 0     ; string to hold the text which is read from file
+    37 00000073 546865206E756D6265-         format db "The number of special characters in the text is %d", 0
+    37 0000007C 72206F662073706563-
+    37 00000085 69616C206368617261-
+    37 0000008E 637465727320696E20-
+    37 00000097 746865207465787420-
+    37 000000A0 697320256400       
+    38                                  
+    39                                  ; our code starts here
+    40                                  segment code use32 class=code
+    41                                      start:
+    42                                          ; call fopen() to create the file
+    43                                          ; fopen() will return a file descriptor in the EAX or 0 in case of error
+    44                                          ; eax = fopen(file_name, access_mode)
+    45 00000000 68[08000000]                    push dword access_mode     
+    46 00000005 68[00000000]                    push dword file_name
+    47 0000000A FF15[00000000]                  call [fopen]
+    48 00000010 83C408                          add esp, 4*2                ; clean-up the stack
+    49                                  
+    50 00000013 A3[0A000000]                    mov [file_descriptor], eax  ; store the file descriptor returned by fopen
+    51                                  
+    52                                          ; check if fopen() has successfully created the file (EAX != 0)
+    53 00000018 83F800                          cmp eax, 0
+    54 0000001B 7466                            je final
+    55                                  
+    56                                          ; read the text from file using fread()
+    57                                          ; after the fread() call, EAX will contain the number of chars we've read 
+    58                                          ; eax = fread(text, 1, len, file_descriptor)
+    59 0000001D FF35[0A000000]                  push dword [file_descriptor]
+    60 00000023 6A64                            push dword len
+    61 00000025 6A01                            push dword 1
+    62 00000027 68[0E000000]                    push dword text        
+    63 0000002C FF15[00000000]                  call [fread]
+    64 00000032 83C410                          add esp, 4*4
+    65                                  
+    66 00000035 89C1                            mov ecx,eax
+    67 00000037 BE[0E000000]                    mov esi, text
+    68 0000003C BB00000000                      mov ebx,0
+    69                                          
+    70 00000041 FC                              cld
+    71                                          Check: ; we start going through the elements of the file one by one
+    72 00000042 83F900                              cmp ecx,0 
+    73 00000045 763C                                jbe final
+    74 00000047 AC                                  lodsb ; we put the element in al
+    75                                              ; we will compare it with the ascii code of each of the characters a-z A-Z and 0-9
+    76 00000048 3C7A                                cmp al, 122
+    77 0000004A 770E                                ja addition
+    78 0000004C 3C61                                cmp al, 97
+    79 0000004E 7215                                jb compare1
+    80 00000050 3C41                                cmp al, 65
+    81 00000052 7217                                jb compare2
+    82 00000054 3C30                                cmp al,48
+    83 00000056 7202                                jb addition
+    84 00000058 E2E8                            loop Check
+    85                                          
+    86                                          
+    87                                          addition: ; upon comparison if the element is a special caracter then we raise the count
+    88 0000005A 83C301                              add ebx,1
+    89 0000005D 83F900                              cmp ecx,0
+    90 00000060 83E901                              sub ecx,1
+    91 00000063 73DD                                jae Check
+    92                                          compare1:
+    93 00000065 3C5A                                cmp al,90
+    94 00000067 77F1                                ja addition ; if the element is not a letter
+    95 00000069 7200                                jb compare2
+    96                                              
+    97                                          compare2:
+    98 0000006B 3C41                                cmp al,65
+    99 0000006D 7205                                jb compare3
+   100 0000006F 83E901                              sub ecx,1
+   101 00000072 73CE                                jae Check
+   102                                          compare3:
+   103 00000074 3C39                                cmp al,57
+   104 00000076 77E2                                ja addition ; if the element is not a number
+   105 00000078 7200                                jb compare4
+   106                                          compare4:
+   107 0000007A 3C30                                cmp al,48
+   108 0000007C 72DC                                jb addition ;if the element is not a number
+   109 0000007E 83E901                              sub ecx,1
+   110 00000081 73BF                                jae Check
+   111                                           
+   112                                         
+   113                                  
+   114                                        final:
+   115 00000083 FF35[0A000000]                  push dword [file_descriptor]
+   116 00000089 FF15[00000000]                  call [fclose]
+   117 0000008F 83C404                          add esp, 4
+   118                                          
+   119 00000092 53                              push dword ebx
+   120 00000093 68[73000000]                    push dword format
+   121 00000098 FF15[00000000]                  call [printf]
+   122 0000009E 83C408                          add esp, 4*2
+   123                                          ; exit(0)
+   124 000000A1 6A00                            push dword 0
+   125 000000A3 FF15[00000000]                  call [exit]
